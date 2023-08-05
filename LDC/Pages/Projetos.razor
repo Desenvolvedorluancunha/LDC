@@ -3,13 +3,13 @@
 @using LDC.Services;
 @using Microsoft.UI.Xaml;
 
-@inject LinksApisService linksApisService
+@inject ProjetoService projetoService;
 
-<h1>Apis</h1>
+<h1>Projetos</h1>
 
 <p>This component demonstrates fetching data from a service.</p>
 
-@if (links == null)
+@if (projetos == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -18,24 +18,24 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Tipo</th>
-                <th>Nome</th>
-                <th>Usuário</th>
-                <th>Senha</th>
-                <th>Chave</th>
-                <th>Link</th>
+                <th>Empresa</th>
+                <th>Nome Projeto</th>
+                <th>Visual Studio 2019</th>
+                <th>Visual Studio 2022</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var link in links)
+            @foreach (var link in projetos)
             {
                 <tr>
-                    <td>@link.Tipo</td>
-                    <td>@link.NomeApi</td>
-                    <td>@link.Usuario</td>
-                    <td>@link.Senha</td>
-                    <td>@link.Chave</td>
-                    <button class="btn btn-primary" @onclick="() => IncrementCount(link.Tipo)" value="@link.Tipo">Click me</button>
+                    <td>@link.Empresa</td>
+                    <td>@link.NomeProjeto</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => AbrirProjetos(link.IdProjeto, 2019)">Abrir Soluções</button>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => AbrirProjetos(link.IdProjeto, 2022)">Abrir Soluções</button>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -43,15 +43,15 @@ else
 }
 
 @code {
-    private List<LinksApis> links;
+    private List<LDC.Data.Projetos> projetos;
 
     protected override async Task OnInitializedAsync()
     {
-        links = linksApisService.MontarLinks();
+        projetos = projetoService.MontarProjetos();
     }
 
-    private void IncrementCount(string tipo)
+    private void AbrirProjetos(int idProjeto, int versaoVisualStudio)
     {
-        var teste = "teste";
+        projetoService.AbrirProjetos(idProjeto, versaoVisualStudio);
     }
 }
