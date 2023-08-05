@@ -1,0 +1,55 @@
+﻿@page "/Apis"
+@using LDC.Data;
+@using LDC.Services;
+
+@inject LinksApisService linksApisService
+
+<h1>Apis</h1>
+
+<p>This component demonstrates fetching data from a service.</p>
+
+@if (links == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Tipo</th>
+                <th>Nome</th>
+                <th>Usuário</th>
+                <th>Senha</th>
+                <th>Chave</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var link in links)
+            {
+                <tr>
+                    <td>@link.Tipo</td>
+                    <td>@link.NomeApi</td>
+                    <td>@link.Usuario</td>
+                    <td>@link.Senha</td>
+                    <td>@link.Chave</td>
+                    <td>
+                        <a href="@link.Link">
+                            link
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<LinksApis> links;
+
+    protected override async Task OnInitializedAsync()
+    {
+        links = linksApisService.MontarLinks();
+    }
+}
