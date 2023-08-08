@@ -50,15 +50,22 @@
     </ItemGroup>
 
     <ItemGroup>
+      <AndroidResource Remove="Uteis\**" />
+      <Compile Remove="Uteis\**" />
+      <Content Remove="Uteis\**" />
+      <EmbeddedResource Remove="Uteis\**" />
+      <MauiXaml Remove="Uteis\**" />
+      <None Remove="Uteis\**" />
+    </ItemGroup>
+
+    <ItemGroup>
       <None Include="..\.editorconfig" Link=".editorconfig" />
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="ClosedXML" Version="0.102.0" />
+        <PackageReference Include="LibGit2Sharp" Version="0.27.2" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Uteis\" />
     </ItemGroup>
 
 </Project>

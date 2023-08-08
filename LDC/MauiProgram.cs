@@ -25,6 +25,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<WeatherForecastService>();
 		builder.Services.AddSingleton<ProjetoService>();
 		builder.Services.AddSingleton<LinksApisService>();
+		builder.Services.AddSingleton<PublicacaoService>();
 
 		return builder.Build();
 	}

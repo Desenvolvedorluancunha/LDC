@@ -1,11 +1,13 @@
+using ClosedXML.Excel;
 using LDC.Data;
 using System.Diagnostics;
+using LibGit2Sharp;
 
 namespace LDC.Services;
-public class ProjetoService
+public class PublicacaoService
 {
 
-    public ProjetoService() { }
+    public PublicacaoService() { }
 
     public List<Projetos> MontarProjetos()
     {
@@ -23,6 +25,12 @@ public class ProjetoService
                 Empresa = "DESO",
                 IdProjeto = 2,
             },
+            new Projetos
+            {
+                NomeProjeto = "Agillis",
+                Empresa = "GAB",
+                IdProjeto = 3,
+            },
 
         };
 
@@ -32,21 +40,40 @@ public class ProjetoService
     }
 
 
-    public void AbrirProjetos(int idProjeto, int versaoVisualStudio)
+    public void AbrirProjetos(int idProjeto)
     {
-
+        string excelFilePath = @"C:\PROJETOS\PUBLICAÇÃO\Publicacao.xlsx";
         var solutions = ProcurarProjetos(idProjeto);
 
-        foreach(var item in solutions)
+        foreach (var item in solutions)
         {
-            if(item.IdProjeto != 2)
+            AtualizarRepositorio(item.CaminhoRepositorioLocal);
+
+            using (var workbook = new XLWorkbook(excelFilePath))
             {
-                FazerStashDoRepositorio(item.CaminhoRepositorioLocal);
-                AtualizarRepositorio(item.CaminhoRepositorioLocal);
-                FazerCheckoutNaBranchCorreta(item.CaminhoRepositorioLocal, item.BranchDeDerivacao);
+                var worksheet = workbook.Worksheet(1);
+                var usedRange = worksheet.RangeUsed();
+
+                foreach (var cell in usedRange.CellsUsed())
+                {
+                    string branchName = cell.GetString();
+
+                    using (var repo = new Repository(item.CaminhoRepositorioLocal))
+                    {
+                        var branch = repo.Branches.Where(branch => branch.FriendlyName.Contains(branchName)).FirstOrDefault();
+
+                        if (branch != null)
+                        {
+                            var lastCommit = branch.Tip;
+                            var commitTime = lastCommit.Committer.When;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"A branch {branchName} não existe no repositório.");
+                        }
+                    }
+                }
             }
-            
-            AbrirProjetoNoVisualStudio(item.CaminhoSlnProjeto, versaoVisualStudio);
         }
     }
 
@@ -112,7 +139,7 @@ public class ProjetoService
     {
         string visualStudioPath;
 
-        if(versaoVisualStudio == 2022)
+        if (versaoVisualStudio == 2022)
             visualStudioPath = @"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe";
         else
             visualStudioPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe";
@@ -132,18 +159,31 @@ public class ProjetoService
 
     public void FazerStashDoRepositorio(string repositorioPath)
     {
-        string command = $"cd '{repositorioPath}' ; git stash";
+        string repoPath = @"C:\caminho\para\seu\repositorio"; // Substitua pelo caminho para o seu repositório
+        string branchName = "feature/nova-feature"; // Substitua pelo nome da branch que você deseja verificar
 
-        ExecutarPowerShell(command);
+        using (var repo = new Repository(repoPath))
+        {
+            var branch = repo.Branches[branchName];
+
+            if (branch != null)
+            {
+                Console.WriteLine($"A branch {branchName} existe no repositório.");
+            }
+            else
+            {
+                Console.WriteLine($"A branch {branchName} não existe no repositório.");
+            }
+        }
     }
     public void FazerCheckoutNaBranchCorreta(string repositorioPath, string branchDerivacao)
     {
         string command = $"cd '{repositorioPath}' ; git checkout {branchDerivacao}";
 
-        ExecutarPowerShell(command);
+        object value = ExecutarPowerShell(command);
     }
 
-    public void ExecutarPowerShell(string command)
+    public PowerShell ExecutarPowerShell(string command, string repoPath = null)
     {
         ProcessStartInfo psi = new ProcessStartInfo()
         {
@@ -155,6 +195,9 @@ public class ProjetoService
             CreateNoWindow = true
         };
 
+        if (!string.IsNullOrEmpty(repoPath))
+            psi.WorkingDirectory = repoPath;
+
         Process process = new Process()
         {
             StartInfo = psi
@@ -165,11 +208,54 @@ public class ProjetoService
         process.StandardInput.WriteLine(command);
         process.StandardInput.Close();
 
-        string output = process.StandardOutput.ReadToEnd();
-        string errors = process.StandardError.ReadToEnd();
+        var powerShell = new PowerShell
+        {
+            Saida = process.StandardOutput.ReadToEnd(),
+            Erro = process.StandardError.ReadToEnd()
+        };
 
         process.WaitForExit();
 
         process.Close();
+
+        return powerShell;
+
+    }
+
+    public void RealizarMerge(string repoPath, string sourceBranchName, string targetBranchName)
+    {
+        string logFilePath = @"C:\PROJETOS\PUBLICAÇÃO\publicacao.txt";
+
+        using (var repo = new Repository(repoPath))
+        {
+            using (StreamWriter writer = File.CreateText(logFilePath))
+            {
+                var sourceBranch = repo.Branches.Where(branch => branch.FriendlyName.Contains(sourceBranchName)).FirstOrDefault();
+                var targetBranch = repo.Branches.Where(branch => branch.FriendlyName.Contains(targetBranchName)).FirstOrDefault();
+
+                Commands.Checkout(repo, sourceBranchName);
+
+
+                Commit baseCommit = repo.ObjectDatabase.FindMergeBase(sourceBranch.Tip, targetBranch.Tip);
+
+                // Obtém o merger
+                var merger = repo.Config.BuildSignature(DateTimeOffset.Now);
+
+                // Realiza o merge
+                MergeResult mergeResult = repo.Merge(targetBranch, merger);
+
+
+                if (mergeResult.Status == MergeStatus.Conflicts)
+                {
+                }
+                else if (mergeResult.Status == MergeStatus.UpToDate)
+                {
+                    // Não há nada para mesclar, as duas branches já estão sincronizadas
+                }
+                writer.WriteLine($"{mergeResult.Status}");
+
+
+            }
+        }
     }
 }

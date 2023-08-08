@@ -1,8 +1,8 @@
-﻿@page "/Projetos"
+﻿@page "/Publicacao"
 @using LDC.Data;
 @using LDC.Services;
 
-@inject ProjetoService projetoService;
+@inject PublicacaoService publicacaoService;
 
 <h1>Projetos</h1>
 
@@ -30,10 +30,10 @@ else
                     <td>@link.Empresa</td>
                     <td>@link.NomeProjeto</td>
                     <td>
-                        <button class="btn btn-primary" @onclick="() => AbrirProjetos(link.IdProjeto, 2019)">Abrir Soluções</button>
+                        <button class="btn btn-primary" @onclick="() => RealizarMerge()">FazerMerge</button>
                     </td>
                     <td>
-                        <button class="btn btn-primary" @onclick="() => AbrirProjetos(link.IdProjeto, 2022)">Abrir Soluções</button>
+                        <button class="btn btn-primary" @onclick="() => AbrirProjetos(link.IdProjeto)">Abrir Soluções</button>
                     </td>
                 </tr>
             }
@@ -46,11 +46,20 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        projetos = projetoService.MontarProjetos();
+        projetos = publicacaoService.MontarProjetos();
     }
 
-    private void AbrirProjetos(int idProjeto, int versaoVisualStudio)
+    private void AbrirProjetos(int idProjeto)
     {
-        projetoService.AbrirProjetos(idProjeto, versaoVisualStudio);
+        publicacaoService.AbrirProjetos(idProjeto);
+    }
+
+    private void RealizarMerge()
+    {
+        var caminho = @"C:\PROJETOS\ATS\LIS-ATS";
+        var targetBranchName = "BLPI-40";
+        var sourceBranchName = "teste2";
+
+        publicacaoService.RealizarMerge(caminho, sourceBranchName, targetBranchName);
     }
 }
